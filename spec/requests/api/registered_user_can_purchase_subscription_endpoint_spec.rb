@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'stripe_mock'
 
 describe 'POST /api/subscriptions', type: :request do
@@ -11,20 +12,48 @@ describe 'POST /api/subscriptions', type: :request do
   before(:each) { StripeMock.start }
   after(:each) { StripeMock.stop }
 
-  before do
-    post '/api/subscriptions',
-         params: {
-           stripeToken: valid_token
-         },
-         headers: headers
+  describe 'with valid paramaters' do
+    before do
+      post '/api/subscriptions',
+           params: {
+             stripeToken: valid_token
+           },
+           headers: headers
+    end
+
+    it 'set the "subscriber" attribute to true on successfull transaction' do
+      user.reload
+      expect(user.subscriber).to eq true
+    end
+
+    it 'returns a success http code' do
+      expect(response).to have_http_status 200
+    end
+
+    it 'returns a success message' do
+      expect(response_json['message']).to eq 'Transaction was successful'
+    end
   end
 
-  it 'set the "subscriber" attribute to true on successfull transaction' do
-    user.reload
-    expect(user.subscriber).to eq true
-  end
 
-  it 'responds with success message' do
-    expect(response_json['message']).to eq 'Transaction was successful'
+  describe 'with invalid parameters' do
+    before do
+      post '/api/subscriptions',
+           headers: headers
+    end
+
+    it 'returns a error http code' do
+      expect(response).to have_http_status 422
+    end
+
+    it 'does NOT set the "subscriber" attribute to true' do
+      user.reload
+      expect(user.subscriber).not_to eq true
+    end
+
+    it 'returns an error message' do
+      expect(response_json['message']).to eq 'Transaction was NOT successful. There was no token provided...'
+    end
+
   end
 end
