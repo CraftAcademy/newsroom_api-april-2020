@@ -8,9 +8,22 @@ describe 'POST /api/subscriptions', type: :request do
   let(:headers) { { HTTP_ACCEPT: 'application/json' }.merge!(credentials) }
   let(:stripe_helper) { StripeMock.create_test_helper }
   let(:valid_token) { stripe_helper.generate_card_token }
-
   before(:each) { StripeMock.start }
   after(:each) { StripeMock.stop }
+  let!(:product) { stripe_helper.create_product }
+  let!(:plan) do
+    stripe_helper.create_plan(
+      id: 'dns_subscription',
+      amount: 50000,
+      currency: 'usd',
+      inteval: 'month',
+      interval_count: 6,
+      name: 'DNS Subscription 2',
+      product: product.id
+    )
+  end
+
+
 
   describe 'with valid paramaters' do
     before do
